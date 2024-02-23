@@ -45,5 +45,8 @@ jobs:
             python -m pip install --upgrade pip
             pip install -r requirements.txt
       - name: Prueba unitaria sumar
-        run: |
+        run: 
             pytest
+      - name: Flake8
+        run: 
+            flake8 --exclude env
