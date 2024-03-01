@@ -1,7 +1,6 @@
 import boto3
 import urllib.request
 from datetime import datetime
-import json
 
 s3 = boto3.client('s3')
 
