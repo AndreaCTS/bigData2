@@ -5,22 +5,24 @@ import json
 
 s3 = boto3.client('s3')
 
+
 def lambda_handler(event, context):
-    
+
     # Obtén la fecha actual
     now = datetime.now()
     date_string = now.strftime("%Y-%m-%d")
-    
+
     url = 'https://www.eltiempo.com/'
-    
+
     try:
         # Descargar la página del tiempo
         response = urllib.request.urlopen(url)
         data = response.read()
 
         # Subir el archivo a S3
-        s3.put_object(Body=data, Bucket='zappa-hvwbzmvlm', Key=f'{date_string}.html')
-        
+        s3.put_object(Body=data, Bucket='zappa-hvwbzmvlm',
+                      Key=f'{date_string}.html')
+
         return {
             'statusCode': 200,
             'body': f'Archivo {date_string}.html subido exitosamente a S3'
