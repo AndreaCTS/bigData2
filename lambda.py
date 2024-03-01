@@ -1,8 +1,6 @@
 import boto3
 import urllib.request
 from datetime import datetime
-from urllib3.util.ssl_ import DEFAULT_CIPHERS
-
 
 
 s3 = boto3.client('s3')
