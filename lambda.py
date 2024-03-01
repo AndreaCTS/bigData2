@@ -1,11 +1,14 @@
 import boto3
 import urllib.request
 from datetime import datetime
+from urllib3.util.ssl_ import DEFAULT_CIPHERS
+
+
 
 s3 = boto3.client('s3')
 
 
-def lambda_handler(event, context):
+def f(event, context):
 
     # Obtén la fecha actual
     now = datetime.now()
@@ -19,7 +22,7 @@ def lambda_handler(event, context):
         data = response.read()
 
         # Subir el archivo a S3
-        s3.put_object(Body=data, Bucket='zappa-hvwbzmvlm',
+        s3.put_object(Body=data, Bucket='zappa-45216lrb5',
                       Key=f'{date_string}.html')
 
         return {
