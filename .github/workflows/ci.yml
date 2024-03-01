@@ -61,4 +61,13 @@ jobs:
         run: aws s3 ls
       - name: subir archivos
         run: aws s3 cp . s3://bigdata0.1/Code --recursive
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt  # Ajusta según tu configuración
+
+      - name: Deploy with Zappa
+        run: |
+          pip install zappa
+          zappa deploy dev  # Ajusta al entorno que estás usando en Zappa
       
