@@ -2,7 +2,6 @@
     "dev": {
         "app_function": "lambda.f",
         "aws_region": "us-east-1",
-        "profile_name": "default",
         "project_name": "bigdata2",
         "runtime": "python3.10",
         "s3_bucket": "zappa-45216lrb5",
@@ -13,7 +12,7 @@
         "events": [
             {
                 "function": "lambda.f",
-                "expression": "cron(59 4 * * ? *)"  // Ejecutar todos los días a las 8:00 UTC
+                "expression": "cron(59 4 * * ? *)"  
             }
         ]
     
