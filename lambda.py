@@ -22,6 +22,7 @@ def f(event, context):
         # Subir el archivo a S3
         s3.put_object(Body=data, Bucket='zappa-45216lrb5',
                       Key=f'{date_string}.html')
+        print("lambda oka")
 
         return {
             'statusCode': 200,
