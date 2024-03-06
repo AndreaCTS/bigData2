@@ -68,4 +68,5 @@ jobs:
           source env/bin/activate
           pip install zappa
           zappa update dev  # Ajusta al entorno que estás usando en Zappa
+          zappa invoke lambda.f
       
