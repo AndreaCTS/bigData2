@@ -12,7 +12,8 @@ def f(event, context):
             url = (
                 'https://casas.mitula.com.co/searchRE/'
                 'nivel1-Cundinamarca/nivel2-Bogot%C3%A1/'
-                'orden-0/q-bogot%C3%A1?req_sgmt=REVTS1RPUDtVU0VSX1NFQVJDSDtTRVJQOw==')
+                'orden-0/'
+                'q-bogot%C3%A1?req_sgmt=REVTS1RPUDtVU0VSX1NFQVJDSDtTRVJQOw==')
         else:
             url = ('https://casas.mitula.com.co/searchRE/'
                    'nivel1-Cundinamarca/nivel2-Bogot%C3%A1/'

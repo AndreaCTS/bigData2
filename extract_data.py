@@ -31,7 +31,7 @@ def extract_data(html_content):
         else:
             bedrooms = 'No disponible'
         adicional = prop.find('span', class_='facility-item__text')
-        adicional_text = adicional.text.strip() if adicional else 'No disponible'
+        adicional_text=adicional.text.strip() if adicional else 'No disponible'
 
         data.append([price, area, bedrooms, adicional_text])
         # print(data)
@@ -91,7 +91,10 @@ def handler(event, context):
     # Agregar el sufijo 'm²'
 
     # Guardar el DataFrame como archivo CSV en S3
-    csv_key = f'casas/year={current_date[:4]}/month={current_date[5:7]}/day={current_date[8:]}/{current_date}.csv'
+    csv_key = (f'casas/year={current_date[:4]}/'
+           f'month={current_date[5:7]}/'
+           f'day={current_date[8:]}/'
+           f'{current_date}.csv')
     csv_buffer = df.to_csv(index=False)
     s3.put_object(Body=csv_buffer, Bucket='buckets-final', Key=csv_key)
 
