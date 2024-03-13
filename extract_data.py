@@ -5,7 +5,9 @@ import pandas as pd
 
 def extract_data(html_content):
     """
-    Función para extraer el precio, metraje, número de habitaciones y características adicionales de las páginas HTML.
+    Función para extraer el precio, metraje, 
+    número de habitaciones y características 
+    adicionales de las páginas HTML.
     """
     soup = BeautifulSoup(html_content, 'html.parser')
     #print("HTML:     ",soup)
@@ -24,7 +26,8 @@ def extract_data(html_content):
             area_span = area_div.find_next('span')
         area = area_span.text.strip() if area_span else "No disponible"
         bedrooms_element = prop.find('span', attrs={'data-test': 'bedrooms'})
-        bedrooms = bedrooms_element.text.strip() if bedrooms_element else 'No disponible'
+        bedrooms = bedrooms_element.text.strip() 
+        if bedrooms_element else 'No disponible'
         adicional = prop.find('span', class_='facility-item__text')
         adicional_text = adicional.text.strip() if adicional else 'No disponible'
         
@@ -36,7 +39,8 @@ def extract_data(html_content):
 
 def handler(event, context):
     """
-    Función para procesar los datos descargados y guardarlos en un archivo CSV en AWS S3.
+    Función para procesar los datos descargados 
+    y guardarlos en un archivo CSV en AWS S3.
     """
     s3 = boto3.client('s3')
     bucket_name = 'buckets-raws'
@@ -62,12 +66,13 @@ def handler(event, context):
     # Crear un DataFrame pandas con todos los datos recolectados
     df = pd.DataFrame(all_data, columns=['Price', 'Area', 'Bedrooms', 'Adicional'])
     
-    df['Price'] = pd.to_numeric(df['Price'].str.replace('[$,.]', '', regex=True), errors='coerce')  # Convertir a numérico, reemplazar no numéricos con NaN
+    df['Price'] = pd.to_numeric(df['Price'].str.replace('[$,.]', '', regex=True)
+    , errors='coerce')  
     df['Price'] = df['Price'].astype('Int64')  # Convertir a tipo Int64
     
-    df['Bedrooms'] = pd.to_numeric(df['Bedrooms'].str.split(' ').str[0], errors='coerce')  # Convertir a numérico, reemplazar no numéricos con NaN
+    df['Bedrooms'] = pd.to_numeric(df['Bedrooms'].str.split(' ').str[0], errors='coerce')  
     
-    df['Area'] = df['Area'].str.extract(r'(\d+)').astype(float)  # Extraer solo los números y convertir a tipo float
+    df['Area'] = df['Area'].str.extract(r'(\d+)').astype(float) 
     #df['Area'] = df['Area'].apply(lambda x: '{:.0f} m²'.format(x))  # Agregar el sufijo 'm²'
     
     
