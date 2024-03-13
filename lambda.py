@@ -8,9 +8,10 @@ def f(event, context):
     
     for page_number in range(1, 6):
         if(page_number==1):
-            url = f'https://casas.mitula.com.co/casas/pereira/'
+            
+            url = f'https://casas.mitula.com.co/searchRE/nivel1-Cundinamarca/nivel2-Bogot%C3%A1/orden-0/q-bogot%C3%A1?req_sgmt=REVTS1RPUDtVU0VSX1NFQVJDSDtTRVJQOw=='
         else:
-            url = f'https://casas.mitula.com.co/casas/pereira/{page_number}'
+            url = f'https://casas.mitula.com.co/searchRE/nivel1-Cundinamarca/nivel2-Bogot%C3%A1/orden-0/q-bogot%C3%A1/pag-{page_number}?req_sgmt=REVTS1RPUDtVU0VSX1NFQVJDSDtTRVJQOw=='
         response = requests.get(url)
         
         if response.status_code == 200:

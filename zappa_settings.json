@@ -19,6 +19,7 @@
 
     "dev2": {
         "app_function": "extract_data.handler",
+        "aws_region": "us-east-1",
         "keep_warm": false,
         "role_name": "LabRole",
         "manage_roles": false,

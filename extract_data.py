@@ -1,56 +1,89 @@
 import boto3
-from bs4 import BeautifulSoup
 from datetime import datetime
-import csv
-from io import StringIO
+from bs4 import BeautifulSoup
+import pandas as pd
 
-s3 = boto3.client('s3')
+def extract_data(html_content):
+    """
+    Función para extraer el precio, metraje, número de habitaciones y características adicionales de las páginas HTML.
+    """
+    soup = BeautifulSoup(html_content, 'html.parser')
+    #print("HTML:     ",soup)
+    properties = soup.find_all('div', class_='listing-card__information')
+    #print("PROPERTIES: ",properties)
+    data = []
+    
+    
+    
+    for prop in properties:
+        
+        price = prop.find('div', class_='price').text.strip()
+        area_div = prop.find('div', class_='card-icon card-icon__area')
+        area_span = None
+        if area_div:
+            area_span = area_div.find_next('span')
+        area = area_span.text.strip() if area_span else "No disponible"
+        bedrooms_element = prop.find('span', attrs={'data-test': 'bedrooms'})
+        bedrooms = bedrooms_element.text.strip() if bedrooms_element else 'No disponible'
+        adicional = prop.find('span', class_='facility-item__text')
+        adicional_text = adicional.text.strip() if adicional else 'No disponible'
+        
+        data.append([price, area, bedrooms, adicional_text])
+        #print(data)
+    
+    
+    return data
 
 def handler(event, context):
-    # Obtener la fecha actual
-    current_date = datetime.now()
-    year = current_date.strftime('%Y')
-    month = current_date.strftime('%m')
-    day = current_date.strftime('%d')
-
-    # Definir la ruta del archivo CSV
-    csv_key = f'casas/year={year}/month={month}/day={day}/{current_date}.csv'
-
-    # Inicializar el CSV
-    csv_data = [['Precio', 'Metraje', 'Habitaciones', 'Características']]
-
-    # Iterar sobre los archivos en el bucket-raw
+    """
+    Función para procesar los datos descargados y guardarlos en un archivo CSV en AWS S3.
+    """
+    s3 = boto3.client('s3')
     bucket_name = 'buckets-raws'
 
-    # Obtener el objeto que desencadenó el evento
-    for record in event['Records']:
-        bucket_name = record['s3']['bucket']['name']
-        obj_key = record['s3']['object']['key']
+    # Obtener la fecha actual
+    current_date = datetime.now().strftime('%Y-%m-%d')
 
-        # Descargar el archivo HTML
-        obj_data = s3.get_object(Bucket=bucket_name, Key=obj_key)
-        html_content = obj_data['Body'].read()
+    # Obtener la lista de objetos en el bucket
+    response = s3.list_objects(Bucket=bucket_name)
+    all_data = []
 
-        # Procesar el HTML con BeautifulSoup
-        soup = BeautifulSoup(html_content, 'html.parser')
+    #for obj in response.get('Contents', []):
+    if 'Contents' in response:
+        for obj in response['Contents']:
+        # Obtener el contenido de cada objeto
+            response_obj = s3.get_object(Bucket=bucket_name, Key=obj['Key'])
+            html_content = response_obj['Body'].read()
+    
+            # Extraer los datos de la página HTML y agregarlos a la lista
+            data = extract_data(html_content)
+            all_data.extend(data)
 
-        # Extraer datos de la página
-        precio = soup.find('span', class_='precio').text
-        metraje = soup.find('span', class_='metraje').text
-        habitaciones = soup.find('span', class_='habitaciones').text
-        caracteristicas = soup.find('div', class_='caracteristicas').text.strip()
+    # Crear un DataFrame pandas con todos los datos recolectados
+    df = pd.DataFrame(all_data, columns=['Price', 'Area', 'Bedrooms', 'Adicional'])
+    
+    df['Price'] = pd.to_numeric(df['Price'].str.replace('[$,.]', '', regex=True), errors='coerce')  # Convertir a numérico, reemplazar no numéricos con NaN
+    df['Price'] = df['Price'].astype('Int64')  # Convertir a tipo Int64
+    
+    df['Bedrooms'] = pd.to_numeric(df['Bedrooms'].str.split(' ').str[0], errors='coerce')  # Convertir a numérico, reemplazar no numéricos con NaN
+    
+    df['Area'] = df['Area'].str.extract(r'(\d+)').astype(float)  # Extraer solo los números y convertir a tipo float
+    #df['Area'] = df['Area'].apply(lambda x: '{:.0f} m²'.format(x))  # Agregar el sufijo 'm²'
+    
+    
 
-        # Agregar los datos al CSV
-        csv_data.append([precio, metraje, habitaciones, caracteristicas])
 
-    # Guardar el CSV en S3
-    csv_buffer = StringIO()
-    csv_writer = csv.writer(csv_buffer)
-    csv_writer.writerows(csv_data)
-
-    s3.put_object(Body=csv_buffer.getvalue(), Bucket='buckets-final', Key=csv_key)
+    # Guardar el DataFrame como archivo CSV en S3
+    csv_key = f'casas/year={current_date[:4]}/month={current_date[5:7]}/day={current_date[8:]}/{current_date}.csv'
+    csv_buffer = df.to_csv(index=False)
+    s3.put_object(Body=csv_buffer, Bucket='buckets-final', Key=csv_key)
 
     return {
         'statusCode': 200,
         'body': 'Datos procesados y guardados en S3 correctamente.'
     }
+    
+
+handler(None, None)
+
+
