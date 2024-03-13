@@ -70,5 +70,19 @@ jobs:
           pip install zappa
           pip freeze > requirements.txt
           zappa update dev  # Ajusta al entorno que estás usando en Zappa
-          zappa invoke lambda.f
+
+      - name: Parcial
+        run: |
+          source env/bin/activate
+          flake8 extract_data.py
+      - name: Pruebas Unitarias Pytest
+        run: |
+          pytest extract_data.py
+          python3 -v
+      - name: Despliegue de funciones con Zappa
+        run: |
+          source env/bin/activate
+          pwd
+          zappa update dev
+          zappa update dev2
       
