@@ -8,7 +8,7 @@ class TestLambdaHandlerProcessing(unittest.TestCase):
     def test_lambda_handler_processing(self, mock_boto3_resource, mock_boto3_client):
         # Simulate the behavior of boto3
         mock_s3_resource = mock_boto3_resource.return_value
-        mock_s3_client = mock_boto3_client.return_value
+        #mock_s3_client = mock_boto3_client.return_value
 
         # Mock the S3 object and its get method
         mock_s3_object = Mock()

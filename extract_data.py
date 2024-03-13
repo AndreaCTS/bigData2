@@ -26,8 +26,11 @@ def extract_data(html_content):
             area_span = area_div.find_next('span')
         area = area_span.text.strip() if area_span else "No disponible"
         bedrooms_element = prop.find('span', attrs={'data-test': 'bedrooms'})
-        bedrooms = bedrooms_element.text.strip() 
-        if bedrooms_element else 'No disponible'
+         
+        if bedrooms_element:
+          bedrooms = bedrooms_element.text.strip()
+        else:
+          bedrooms = 'No disponible'
         adicional = prop.find('span', class_='facility-item__text')
         adicional_text = adicional.text.strip() if adicional else 'No disponible'
         
