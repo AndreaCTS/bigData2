@@ -1,35 +1,24 @@
+import requests
 import boto3
-import urllib.request
 from datetime import datetime
 
-
-s3 = boto3.client('s3')
-
-
 def f(event, context):
-
-    # Obtén la fecha actual
-    now = datetime.now()
-    date_string = now.strftime("%Y-%m-%d")
-
-    url = 'https://www.eltiempo.com/'
-
-    try:
-        # Descargar la página del tiempo
-        response = urllib.request.urlopen(url)
-        data = response.read()
-
-        # Subir el archivo a S3
-        s3.put_object(Body=data, Bucket='zappa-45216lrb5',
-                      Key=f'{date_string}.html')
-        print("lambda oka")
-
-        return {
-            'statusCode': 200,
-            'body': f'Archivo {date_string}.html subido exitosamente a S3'
-        }
-    except Exception as e:
-        return {
-            'statusCode': 500,
-            'body': f'Error al procesar la solicitud: {str(e)}'
-        }
+    s3 = boto3.client('s3')
+    bucket_name = 'buckets-raws'
+    
+    for page_number in range(1, 6):
+        if(page_number==1):
+            url = f'https://casas.mitula.com.co/casas/pereira/'
+        else:
+            url = f'https://casas.mitula.com.co/casas/pereira/{page_number}'
+        response = requests.get(url)
+        
+        if response.status_code == 200:
+            current_date = datetime.now().strftime('%Y-%m-%d')
+            file_key = f'casas/contenido-pag-{page_number}-{current_date}.html'
+            s3.put_object(Body=response.content, Bucket=bucket_name, Key=file_key)
+    
+    return {
+        'statusCode': 200,
+        'body': 'Páginas descargadas y guardadas en S3 correctamente.'
+    }

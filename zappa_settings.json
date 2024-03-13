@@ -4,7 +4,7 @@
         "aws_region": "us-east-1",
         "project_name": "bigdata2",
         "runtime": "python3.10",
-        "s3_bucket": "zappa-45216lrb5",
+        "s3_bucket": "buckets-raws",
         "keep_warm": false,
         "apigateway_enabled": false,
         "manage_roles": false,
@@ -15,6 +15,23 @@
                 "expression": "cron(45 4 * * ? *)"  
             }
         ]
-    
+    },
+
+    "dev2": {
+        "app_function": "extract_data.handler",
+        "keep_warm": false,
+        "role_name": "LabRole",
+        "manage_roles": false,
+        "apigateway_enabled": false,
+        "project_name": "bigdata2",
+        "runtime": "python3.10",
+        "s3_bucket": "buckets-final",
+        "events": [
+            {
+                "function": "extract_data.handler",
+                "expression": "cron(5 12 * * ? *)"
+            }
+        ]
     }
+
 }
