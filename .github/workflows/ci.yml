@@ -80,4 +80,5 @@ jobs:
           pwd
           zappa update dev
           zappa update dev2
+          zappa invoke dev lambda.f
       
