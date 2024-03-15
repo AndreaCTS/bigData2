@@ -12,7 +12,7 @@
         "events": [
             {
                 "function": "lambda.f",
-                "expression": "cron(45 4 * * ? *)"  
+                "expression": "cron(25 20 ? * THU *)"  
             }
         ]
     },
@@ -27,10 +27,19 @@
         "project_name": "bigdata2",
         "runtime": "python3.10",
         "s3_bucket": "buckets-final",
+
+        "function": "extract_data.handler",
+        "type": "s3",
+        "bucket": "buckets-raws",
         "events": [
             {
                 "function": "extract_data.handler",
-                "expression": "cron(5 12 * * ? *)"
+                "event_source": {
+                    "arn":  "arn:aws:s3:::buckets-raws"
+                    "events": [
+                        "s3:ObjectCreated:*"
+                    ]
+                }
             }
         ]
     }
