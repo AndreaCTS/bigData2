@@ -80,7 +80,7 @@ jobs:
           python run_jobSakila.py
 
           python run_jobSakilaCopy.py
-
-          python CreateTablesAthenas.py
+          
+          python createTablesAthenas.py
 
         
