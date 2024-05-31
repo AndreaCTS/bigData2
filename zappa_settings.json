@@ -7,13 +7,64 @@
         "manage_roles": false,
         "project_name": "bigdata2",
         "runtime": "python3.10",
-        "s3_bucket": "zappa-parcial-corte2"
+        "s3_bucket": "datosakilawarehouse",
         "apigateway_enabled": false,
         "events": [
             {
                 "function": "lambda.lambda_handler",
-                "expression": "cron(0 10 * * ? *)"
+                "expression": "cron(45 18 * * ? *)"
             }
-        ]
+        ],
+        "endpoint_configuration": "REGIONAL",
+        "timeout_seconds": 600,
+        "memory_size": 300,
+        "vpc_config": {
+            "SubnetIds": [
+                "subnet-091edf3ea78546e02",
+                "subnet-0039730d2ccb65397",
+                "subnet-0b35e46e3a5ae7e90",
+                "subnet-07daa34141409ca2c",
+                "subnet-0bf44a96c7ee847c5"
+            ],
+            "SecurityGroupIds": [
+                "sg-09a60660b0d827046",
+                "sg-091c859b073c30724"
+            ]
+        },
+        "slim_handler": true
+    },
+    "dev2": {
+        "app_function": "updateDate.lambda_handler",
+        "aws_region": "us-east-1",
+        "keep_warm": false,
+        "role_name": "LabRole",
+        "manage_roles": false,
+        "project_name": "bigdata2",
+        "runtime": "python3.10",
+        "s3_bucket": "datosakilawarehouse",
+        "apigateway_enabled": false,
+        "events": [
+            {
+                "function": "updateDate.lambda_handler",
+                "expression": "cron(5 18 26 * ? *)"
+            }
+        ],
+        "endpoint_configuration": "REGIONAL",
+        "timeout_seconds": 600,
+        "memory_size": 300,
+        "vpc_config": {
+            "SubnetIds": [
+                "subnet-091edf3ea78546e02",
+                "subnet-0039730d2ccb65397",
+                "subnet-0b35e46e3a5ae7e90",
+                "subnet-07daa34141409ca2c",
+                "subnet-0bf44a96c7ee847c5"
+            ],
+            "SecurityGroupIds": [
+                "sg-09a60660b0d827046",
+                "sg-091c859b073c30724"
+            ]
+        },
+        "slim_handler": true
     }
 }

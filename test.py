@@ -21,7 +21,7 @@ class SparkTest(unittest.TestCase):
             StructField("Adicional", StringType(), True),
             StructField("Area", IntegerType(), True),
             StructField("Bedrooms", IntegerType(), True),
-            StructField("Price", DoubleType(), True)  # Asegurar que Price es de tipo Double
+            StructField("Price", DoubleType(), True)  
         ])
         
         # Crear datos de prueba con el esquema definido

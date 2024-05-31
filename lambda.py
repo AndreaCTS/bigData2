@@ -1,48 +1,110 @@
 import boto3
+import mysql.connector
+import pandas as pd
+import numpy as np
+import logging
+from datetime import datetime, timedelta
+import random
+from io import StringIO
+#from pyspark.sql import SparkSession
+
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger()
 
 def lambda_handler(event, context):
-    client = boto3.client('emr', region_name='us-east-1')
+    logger.info("Lambda function has started.")
+    
+    # Configuración de conexión a MySQL
+    mysql_config = {
+        'host': 'miservidor.cv8kk8aog4k1.us-east-1.rds.amazonaws.com',
+        'user': 'admin',
+        'password': '12345678',
+        'database': 'sakila'  # Asegúrate de usar la base de datos correcta
+    }
+    
+    # Crear sesión Spark
+    #spark = SparkSession.builder.appName("GlueJobSimulation").getOrCreate()
 
-    cluster_id = client.run_job_flow(
-        Name='EMR-Spark',
-        ReleaseLabel='emr-6.2.0',
-        Applications=[{'Name': 'Spark'}],
-        Configurations=[{'Classification': 'spark-env', 'Properties': {}, 'Configurations': [{'Classification': 'export', 'Properties': {'PYSPARK_PYTHON': '/usr/bin/python3'}}]}],
-        Instances={
-            'InstanceGroups': [
-                {
-                    'Name': "Master nodes",
-                    'Market': 'ON_DEMAND',
-                    'InstanceRole': 'MASTER',
-                    'InstanceType': 'm5.xlarge',
-                    'InstanceCount': 1,
-                },
-                {
-                    'Name': "Worker nodes",
-                    'Market': 'ON_DEMAND',
-                    'InstanceRole': 'CORE',
-                    'InstanceType': 'm5.xlarge',
-                    'InstanceCount': 2,
-                }
-            ],
-            'KeepJobFlowAliveWhenNoSteps': False,
-            'TerminationProtected': False,
-        },
-        Steps=[{
-            'Name': 'Run Spark script',
-            'ActionOnFailure': 'TERMINATE_CLUSTER',
-            'HadoopJarStep': {
-                'Jar': 'command-runner.jar',
-                'Args': ["spark-submit", "--deploy-mode", "cluster", "s3://scriptpyspark/parciabigdata21.py"]
-            }
-        }],
-        JobFlowRole='EMR_EC2_DefaultRole',
-        ServiceRole='EMR_DefaultRole',
-        VisibleToAllUsers=True
-    )
+    # Conexión a MySQL
+    try:
+        conn = mysql.connector.connect(**mysql_config)
+        cursor = conn.cursor()
 
-    print(f"Started cluster {cluster_id}")
+        # Obtener datos de clientes y películas
+        cursor.execute("SELECT customer_id FROM customer")
+        customers = [row[0] for row in cursor.fetchall()]
+
+        cursor.execute("SELECT inventory_id, film_id FROM inventory")
+        inventories = cursor.fetchall()
+        inventory_dict = {row[0]: row[1] for row in inventories}
+        inventory_ids = list(inventory_dict.keys())
+
+        # Obtener las frecuencias de renta de clientes y películas
+        cursor.execute("SELECT customer_id, COUNT(*) AS rental_count FROM rental GROUP BY customer_id")
+        customer_rental_counts = cursor.fetchall()
+        customer_ids, customer_weights = zip(*customer_rental_counts)
+        customer_ids = [int(id) for id in customer_ids]  # Convertir a int
+        customer_weights = np.array(customer_weights) / sum(customer_weights)
+
+        cursor.execute("SELECT film_id, COUNT(*) AS rental_count FROM inventory INNER JOIN rental ON inventory.inventory_id = rental.inventory_id GROUP BY film_id")
+        film_rental_counts = cursor.fetchall()
+        film_ids, film_weights = zip(*film_rental_counts)
+        film_ids = [int(id) for id in film_ids]  # Convertir a int
+        film_weights = np.array(film_weights) / sum(film_weights)
+
+        # Simular las rentas
+        new_rentals = []
+        for _ in range(100):
+            customer_id = int(np.random.choice(customer_ids, p=customer_weights))
+            film_id = int(np.random.choice(film_ids, p=film_weights))
+            inventory_id = random.choice([key for key, value in inventory_dict.items() if value == film_id])
+            rental_date = datetime.now()
+            return_date = rental_date + timedelta(days=random.randint(1, 7))
+
+            new_rentals.append((customer_id, inventory_id, rental_date, return_date))
+
+        # Insertar las nuevas rentas en la base de datos
+        insert_query = """
+            INSERT INTO rental (customer_id, inventory_id, rental_date, return_date, staff_id, last_update)
+            VALUES (%s, %s, %s, %s, 1, NOW())
+        """
+        cursor.executemany(insert_query, new_rentals)
+        conn.commit()
+
+        logger.info(f"Inserted {len(new_rentals)} new rentals.")
+        
+        """
+        # Configuración de AWS S3
+        s3_client = boto3.client('s3')
+        bucket_name = 'datosakilawarehouse'
+        s3_prefix = 'landing/'
+
+        # Convertir el DataFrame a CSV y subirlo a S3
+        df = pd.DataFrame(new_rentals, columns=['customer_id', 'inventory_id', 'rental_date', 'return_date'])
+        csv_buffer = StringIO()
+        df.to_csv(csv_buffer, index=False)
+
+        # Obtener la fecha actual para los nombres de archivo
+        current_date = datetime.now().strftime('%Y-%m-%d')
+        s3_key = f"{s3_prefix}rentals_{current_date}.csv"
+
+        # Subir el archivo CSV a S3
+        s3_client.put_object(Bucket=bucket_name, Key=s3_key, Body=csv_buffer.getvalue())
+        
+        """
+
+    except mysql.connector.Error as err:
+        logger.error(f"MySQL Error: {err}")
+    except Exception as e:
+        logger.error(f"Error: {e}")
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
     return {
         'statusCode': 200,
-        'body': f"Cluster {cluster_id} started successfully"
+        'body': 'New rentals simulated and data uploaded to s3'
     }
