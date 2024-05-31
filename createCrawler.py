@@ -11,6 +11,8 @@ database_name = 'datawarehouse_sakila'
 s3_target_path = 's3://datosakilawarehouse/final/'
 
 # Crear un database en Glue si no existe
+
+
 def create_database():
     try:
         response = glue_client.create_database(
@@ -25,6 +27,8 @@ def create_database():
         print(f"Database {database_name} already exists.")
 
 # Crear un crawler
+
+
 def create_crawler():
     try:
         response = glue_client.create_crawler(
@@ -52,9 +56,12 @@ def create_crawler():
         print(f"Crawler {crawler_name} already exists.")
 
 # Iniciar el crawler
+
+
 def start_crawler():
     response = glue_client.start_crawler(Name=crawler_name)
     print(f"Crawler {crawler_name} started.")
+
 
 # Ejecutar las funciones
 create_database()

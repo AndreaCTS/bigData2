@@ -21,7 +21,7 @@ CREATE EXTERNAL TABLE IF NOT EXISTS `datawarehouse_sakila`.`dim_customer` (
   `country` string
 )
 ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
-STORED AS INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat' 
+STORED AS INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
 OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
 LOCATION 's3://datosakilawarehouse/final/dim_customer/'
 TBLPROPERTIES ('classification' = 'parquet');
@@ -38,7 +38,7 @@ CREATE EXTERNAL TABLE IF NOT EXISTS `datawarehouse_sakila`.`dim_film` (
   `category` string
 )
 ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
-STORED AS INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat' 
+STORED AS INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
 OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
 LOCATION 's3://datosakilawarehouse/final/dim_film/'
 TBLPROPERTIES ('classification' = 'parquet');
@@ -57,7 +57,7 @@ CREATE EXTERNAL TABLE IF NOT EXISTS `datawarehouse_sakila`.`dim_date` (
   `quarter` int
 )
 ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
-STORED AS INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat' 
+STORED AS INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
 OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
 LOCATION 's3://datosakilawarehouse/final/dim_date/'
 TBLPROPERTIES ('classification' = 'parquet');
@@ -70,7 +70,7 @@ CREATE EXTERNAL TABLE IF NOT EXISTS `datawarehouse_sakila`.`dim_category` (
   `name` string
 )
 ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
-STORED AS INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat' 
+STORED AS INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
 OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
 LOCATION 's3://datosakilawarehouse/final/dim_category/'
 TBLPROPERTIES ('classification' = 'parquet');
@@ -86,16 +86,18 @@ CREATE EXTERNAL TABLE IF NOT EXISTS `datawarehouse_sakila`.`fact_rentals` (
   `date_key` int,
   `customer_name` string,
   `film_title` string
-  
+
 )
 ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
-STORED AS INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat' 
+STORED AS INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
 OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
 LOCATION 's3://datosakilawarehouse/final/fact_rentals/'
 TBLPROPERTIES ('classification' = 'parquet');
 """
 
 # Ejecutar la consulta en Athena
+
+
 def run_athena_query(query):
     response = athena_client.start_query_execution(
         QueryString=query,
@@ -108,6 +110,7 @@ def run_athena_query(query):
     )
     return response
 
+
 # Ejecutar la creación de las tablas
 queries = [
     create_dim_customer_table_query,
@@ -119,4 +122,6 @@ queries = [
 
 for query in queries:
     response = run_athena_query(query)
-    print("Table creation query submitted. Query execution ID:", response['QueryExecutionId'])
+    print(
+        "Table creation query submitted. Query execution ID:",
+        response['QueryExecutionId'])

@@ -26,11 +26,14 @@ bucket_name = "datosakilawarehouse"
 landing_prefix = "landing/"
 
 # Leer archivos CSV desde S3
+
+
 def read_csv_from_s3(bucket, key):
     csv_obj = s3_client.get_object(Bucket=bucket, Key=key)
     body = csv_obj['Body']
     csv_string = body.read().decode('utf-8')
     return pd.read_csv(io.StringIO(csv_string))
+
 
 customers_df = read_csv_from_s3(bucket_name, landing_prefix + "customer.csv")
 category_df = read_csv_from_s3(bucket_name, landing_prefix + "category.csv")
@@ -42,10 +45,13 @@ city_df = read_csv_from_s3(bucket_name, landing_prefix + "city.csv")
 country_df = read_csv_from_s3(bucket_name, landing_prefix + "country.csv")
 
 # Preprocesar DataFrames
+
+
 def preprocess_dataframe(df, columns):
     df.fillna({col: '' for col in columns}, inplace=True)
     df = df.astype({col: str for col in columns})
     return df
+
 
 customers_df = preprocess_dataframe(customers_df, customers_df.columns)
 category_df = preprocess_dataframe(category_df, category_df.columns)
@@ -57,59 +63,82 @@ city_df = preprocess_dataframe(city_df, city_df.columns)
 country_df = preprocess_dataframe(country_df, country_df.columns)
 
 # Convertir columnas de fecha a formato de fecha correcto
+
+
 def convert_to_date(df, columns):
     for col in columns:
         df[col] = pd.to_datetime(df[col], errors='coerce').dt.date
     return df
 
+
 rental_df = convert_to_date(rental_df, ['rental_date', 'return_date'])
 
 # Convertir columnas de enteros, manejando valores vacíos
+
+
 def convert_to_int(df, columns):
     for col in columns:
         df[col] = df[col].apply(lambda x: int(x) if str(x).isdigit() else 0)
     return df
 
-customers_df = convert_to_int(customers_df, ['customer_id', 'address_id', 'active'])
-rental_df = convert_to_int(rental_df, ['rental_id', 'inventory_id', 'customer_id', 'staff_id'])
-film_df = convert_to_int(film_df, ['film_id', 'release_year', 'language_id', 'original_language_id', 'rental_duration', 'length'])
-inventory_df = convert_to_int(inventory_df, ['inventory_id', 'film_id', 'store_id'])
+
+customers_df = convert_to_int(
+    customers_df, [
+        'customer_id', 'address_id', 'active'])
+rental_df = convert_to_int(
+    rental_df, [
+        'rental_id', 'inventory_id', 'customer_id', 'staff_id'])
+film_df = convert_to_int(film_df,
+                         ['film_id',
+                          'release_year',
+                          'language_id',
+                          'original_language_id',
+                          'rental_duration',
+                          'length'])
+inventory_df = convert_to_int(
+    inventory_df, [
+        'inventory_id', 'film_id', 'store_id'])
 address_df = convert_to_int(address_df, ['address_id', 'city_id'])
 city_df = convert_to_int(city_df, ['city_id', 'country_id'])
 country_df = convert_to_int(country_df, ['country_id'])
 category_df = convert_to_int(category_df, ['category_id'])
 
 # Join de tablas para obtener nombres de ciudad y país en dim_customer
-customers_df = customers_df.merge(address_df[['address_id', 'address', 'city_id']], on='address_id', how='left')
-customers_df = customers_df.merge(city_df[['city_id', 'city', 'country_id']], on='city_id', how='left')
-customers_df = customers_df.merge(country_df[['country_id', 'country']], on='country_id', how='left')
+customers_df = customers_df.merge(
+    address_df[['address_id', 'address', 'city_id']], on='address_id', how='left')
+customers_df = customers_df.merge(
+    city_df[['city_id', 'city', 'country_id']], on='city_id', how='left')
+customers_df = customers_df.merge(
+    country_df[['country_id', 'country']], on='country_id', how='left')
 
 
-#####JOINS
+# JOINS
 # Unimos fact_rentals con dim_customer para obtener los nombres del cliente
 # Unimos fact_rentals con dim_customer para obtener los nombres del cliente
 rental_df = rental_df.merge(customers_df[['customer_id', 'first_name', 'last_name']],
-                            on='customer_id', 
+                            on='customer_id',
                             how='left')
 
 # Unimos el resultado anterior con inventory_df para obtener el film_id
 rental_df = rental_df.merge(inventory_df[['inventory_id', 'film_id']],
-                            on='inventory_id', 
+                            on='inventory_id',
                             how='left')
 
-# Unimos el resultado anterior con dim_film para obtener el título de la película
+# Unimos el resultado anterior con dim_film para obtener el título de la
+# película
 rental_df = rental_df.merge(film_df[['film_id', 'title']],
-                            on='film_id', 
+                            on='film_id',
                             how='left')
-                                  
-                                  
-                                  
+
+
 # Convertir todas las columnas a tipos nativos de Python
-customers_df = customers_df.astype(object).where(pd.notnull(customers_df), None)
+customers_df = customers_df.astype(
+    object).where(pd.notnull(customers_df), None)
 category_df = category_df.astype(object).where(pd.notnull(category_df), None)
 rental_df = rental_df.astype(object).where(pd.notnull(rental_df), None)
 film_df = film_df.astype(object).where(pd.notnull(film_df), None)
-inventory_df = inventory_df.astype(object).where(pd.notnull(inventory_df), None)
+inventory_df = inventory_df.astype(
+    object).where(pd.notnull(inventory_df), None)
 address_df = address_df.astype(object).where(pd.notnull(address_df), None)
 city_df = city_df.astype(object).where(pd.notnull(city_df), None)
 country_df = country_df.astype(object).where(pd.notnull(country_df), None)
@@ -134,14 +163,21 @@ conn_dw = mysql.connector.connect(
 cursor_dw = conn_dw.cursor()
 
 # Función para vaciar las tablas
+
+
 def delete_table_data(cursor, table_name):
     cursor.execute(f"DELETE FROM {table_name}")
 
+
 # Poblar dim_date con todas las fechas de rental_date y return_date
-all_dates = set(rental_df['rental_date'].dropna()) | set(rental_df['return_date'].dropna())
+all_dates = set(
+    rental_df['rental_date'].dropna()) | set(
+        rental_df['return_date'].dropna())
 us_holidays = holidays.US(years=range(2000, 2025))
 
 # Función para poblar las tablas de datawarehouse
+
+
 def populate_datawarehouse():
     # Poblar dim_customer
     for index, row in customers_df.iterrows():
@@ -167,7 +203,7 @@ def populate_datawarehouse():
             name = VALUES(name)
         """, (int(row['category_id']), row['name']))
     conn_dw.commit()
-        
+
     # Poblar dim_film
     for index, row in film_df.iterrows():
         cursor_dw.execute("""
@@ -219,9 +255,11 @@ def populate_datawarehouse():
         customer_key = cursor_dw.fetchone()
 
         # Obtener el film_id desde inventory_df
-        film_id_row = inventory_df[inventory_df['inventory_id'] == int(row['inventory_id'])]
+        film_id_row = inventory_df[inventory_df['inventory_id'] == int(
+            row['inventory_id'])]
         if film_id_row.empty:
-            logger.warning(f"No film_id found for inventory_id {row['inventory_id']}")
+            logger.warning(
+                f"No film_id found for inventory_id {row['inventory_id']}")
             continue
         film_id = film_id_row['film_id'].values[0]
 
@@ -262,6 +300,7 @@ def populate_datawarehouse():
     cursor_dw.close()
     conn_dw.close()
 
+
 # Vaciar las tablas
 cursor_dw.execute("SET FOREIGN_KEY_CHECKS = 0")
 delete_table_data(cursor_dw, 'fact_rentals')
@@ -279,21 +318,42 @@ populate_datawarehouse()
 output_bucket = "datosakilawarehouse"
 output_prefix = "final/"
 
+
 def write_to_s3(df, bucket, prefix, partition_col):
-    df['date_partition'] = pd.to_datetime(df[partition_col], errors='coerce').dt.strftime('%Y-%m-%d')
+    df['date_partition'] = pd.to_datetime(
+        df[partition_col], errors='coerce').dt.strftime('%Y-%m-%d')
     for date, group in df.groupby('date_partition'):
         # Definir el nombre del archivo
         file_name = f"{date}.parquet"
         output_path = f"{prefix}{date}/{file_name}"
         buffer = io.BytesIO()
         group.to_parquet(buffer, index=False)
-        s3_client.put_object(Bucket=bucket, Key=output_path, Body=buffer.getvalue())
+        s3_client.put_object(
+            Bucket=bucket,
+            Key=output_path,
+            Body=buffer.getvalue())
+
 
 # Llama a la función para cada DataFrame
-write_to_s3(customers_df, output_bucket, output_prefix + "dim_customer/", 'create_date')
-write_to_s3(rental_df, output_bucket, output_prefix + "fact_rentals/", 'rental_date')
+write_to_s3(
+    customers_df,
+    output_bucket,
+    output_prefix +
+    "dim_customer/",
+    'create_date')
+write_to_s3(
+    rental_df,
+    output_bucket,
+    output_prefix +
+    "fact_rentals/",
+    'rental_date')
 write_to_s3(film_df, output_bucket, output_prefix + "dim_film/", 'last_update')
-write_to_s3(category_df, output_bucket, output_prefix + "dim_category/", 'last_update')
+write_to_s3(
+    category_df,
+    output_bucket,
+    output_prefix +
+    "dim_category/",
+    'last_update')
 
 # Crear un DataFrame para dim_date
 dim_date_df = pd.DataFrame({

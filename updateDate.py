@@ -9,9 +9,10 @@ from datetime import datetime, timedelta
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
+
 def lambda_handler(event, context):
     logger.info("Lambda function has started.")
-    
+
     # Configuración de conexión a MySQL
     mysql_config = {
         'host': 'miservidor.cv8kk8aog4k1.us-east-1.rds.amazonaws.com',
@@ -20,20 +21,20 @@ def lambda_handler(event, context):
         'database': 'datawarehouse_sakila'  # Asegúrate de usar la base de datos correcta
     }
 
-
     # Conexión a MySQL
     try:
         conn = mysql.connector.connect(**mysql_config)
         cursor = conn.cursor()
-        
-        # Definir el rango de fechas para actualizar (puede ser mensual o anual)
+
+        # Definir el rango de fechas para actualizar (puede ser mensual o
+        # anual)
         today = datetime.today()
         start_date = today.replace(day=1)
         end_date = (start_date + timedelta(days=365)).replace(day=31)
-        
+
         # Generar días festivos de Estados Unidos para el rango de fechas
         us_holidays = holidays.US(years=[today.year, today.year + 1])
-        
+
         # Actualizar o insertar registros en la tabla dim_date
         current_date = start_date
         while current_date <= end_date:

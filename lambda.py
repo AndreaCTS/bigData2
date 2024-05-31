@@ -6,15 +6,16 @@ import logging
 from datetime import datetime, timedelta
 import random
 from io import StringIO
-#from pyspark.sql import SparkSession
+# from pyspark.sql import SparkSession
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
+
 def lambda_handler(event, context):
     logger.info("Lambda function has started.")
-    
+
     # Configuración de conexión a MySQL
     mysql_config = {
         'host': 'miservidor.cv8kk8aog4k1.us-east-1.rds.amazonaws.com',
@@ -22,9 +23,9 @@ def lambda_handler(event, context):
         'password': '12345678',
         'database': 'sakila'  # Asegúrate de usar la base de datos correcta
     }
-    
+
     # Crear sesión Spark
-    #spark = SparkSession.builder.appName("GlueJobSimulation").getOrCreate()
+    # spark = SparkSession.builder.appName("GlueJobSimulation").getOrCreate()
 
     # Conexión a MySQL
     try:
@@ -41,13 +42,15 @@ def lambda_handler(event, context):
         inventory_ids = list(inventory_dict.keys())
 
         # Obtener las frecuencias de renta de clientes y películas
-        cursor.execute("SELECT customer_id, COUNT(*) AS rental_count FROM rental GROUP BY customer_id")
+        cursor.execute(
+            "SELECT customer_id, COUNT(*) AS rental_count FROM rental GROUP BY customer_id")
         customer_rental_counts = cursor.fetchall()
         customer_ids, customer_weights = zip(*customer_rental_counts)
         customer_ids = [int(id) for id in customer_ids]  # Convertir a int
         customer_weights = np.array(customer_weights) / sum(customer_weights)
 
-        cursor.execute("SELECT film_id, COUNT(*) AS rental_count FROM inventory INNER JOIN rental ON inventory.inventory_id = rental.inventory_id GROUP BY film_id")
+        cursor.execute(
+            "SELECT film_id, COUNT(*) AS rental_count FROM inventory INNER JOIN rental ON inventory.inventory_id = rental.inventory_id GROUP BY film_id")
         film_rental_counts = cursor.fetchall()
         film_ids, film_weights = zip(*film_rental_counts)
         film_ids = [int(id) for id in film_ids]  # Convertir a int
@@ -56,13 +59,18 @@ def lambda_handler(event, context):
         # Simular las rentas
         new_rentals = []
         for _ in range(100):
-            customer_id = int(np.random.choice(customer_ids, p=customer_weights))
+            customer_id = int(
+                np.random.choice(
+                    customer_ids,
+                    p=customer_weights))
             film_id = int(np.random.choice(film_ids, p=film_weights))
-            inventory_id = random.choice([key for key, value in inventory_dict.items() if value == film_id])
+            inventory_id = random.choice(
+                [key for key, value in inventory_dict.items() if value == film_id])
             rental_date = datetime.now()
             return_date = rental_date + timedelta(days=random.randint(1, 7))
 
-            new_rentals.append((customer_id, inventory_id, rental_date, return_date))
+            new_rentals.append(
+                (customer_id, inventory_id, rental_date, return_date))
 
         # Insertar las nuevas rentas en la base de datos
         insert_query = """
@@ -73,7 +81,7 @@ def lambda_handler(event, context):
         conn.commit()
 
         logger.info(f"Inserted {len(new_rentals)} new rentals.")
-        
+
         """
         # Configuración de AWS S3
         s3_client = boto3.client('s3')
@@ -91,7 +99,7 @@ def lambda_handler(event, context):
 
         # Subir el archivo CSV a S3
         s3_client.put_object(Bucket=bucket_name, Key=s3_key, Body=csv_buffer.getvalue())
-        
+
         """
 
     except mysql.connector.Error as err:

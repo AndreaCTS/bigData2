@@ -22,17 +22,26 @@ spark = glueContext.spark_session
 job = Job(glueContext)
 job.init(args['JOB_NAME'], args)
 
+
 def upload_to_s3(bucket_name, s3_prefix, df, filename):
     s3_client = boto3.client('s3')
     csv_buffer = StringIO()
-    df.to_csv(csv_buffer, index=False, quoting=csv.QUOTE_NONNUMERIC, escapechar='\\')
+    df.to_csv(
+        csv_buffer,
+        index=False,
+        quoting=csv.QUOTE_NONNUMERIC,
+        escapechar='\\')
     s3_key = f"{s3_prefix}{filename}"
-    s3_client.put_object(Bucket=bucket_name, Key=s3_key, Body=csv_buffer.getvalue())
+    s3_client.put_object(
+        Bucket=bucket_name,
+        Key=s3_key,
+        Body=csv_buffer.getvalue())
     logger.info(f"Data uploaded to S3 at {s3_key}")
+
 
 def main():
     logger.info("Job started.")
-    
+
     # Configuración de conexión a MySQL
     mysql_config = {
         'host': 'miservidor.cv8kk8aog4k1.us-east-1.rds.amazonaws.com',
@@ -49,8 +58,23 @@ def main():
         cursor = conn.cursor()
 
         # Definir las tablas que queremos copiar
-        tables = ['actor', 'address', 'category', 'city', 'country', 'customer', 'film', 'film_actor', 'film_category', 'inventory', 'language', 'payment', 'rental', 'staff', 'store']
-        
+        tables = [
+            'actor',
+            'address',
+            'category',
+            'city',
+            'country',
+            'customer',
+            'film',
+            'film_actor',
+            'film_category',
+            'inventory',
+            'language',
+            'payment',
+            'rental',
+            'staff',
+            'store']
+
         # Configuración de AWS S3
         bucket_name = 'datosakilawarehouse'
         s3_prefix = 'landing/'
@@ -81,6 +105,7 @@ def main():
             conn.close()
 
     logger.info("Job finished successfully.")
+
 
 if __name__ == "__main__":
     main()

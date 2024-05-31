@@ -2,6 +2,7 @@ import mysql.connector
 import holidays
 from datetime import datetime, timedelta
 
+
 def populate_datawarehouse():
     # Conectar a la base de datos sakila
     conn_sakila = mysql.connector.connect(
@@ -107,31 +108,36 @@ def populate_datawarehouse():
     rentals = cursor_sakila.fetchall()
     for rental in rentals:
         # Verificar existencia de customer_key y film_key
-        cursor_dw.execute("SELECT customer_key FROM dim_customer WHERE customer_id = %s", (rental['customer_id'],))
+        cursor_dw.execute(
+            "SELECT customer_key FROM dim_customer WHERE customer_id = %s",
+            (rental['customer_id'],
+             ))
         customer_key = cursor_dw.fetchone()
         cursor_dw.fetchall()  # Asegurarse de leer todos los resultados
 
-        cursor_dw.execute("SELECT film_key FROM dim_film WHERE film_id = %s", (rental['film_id'],))
+        cursor_dw.execute(
+            "SELECT film_key FROM dim_film WHERE film_id = %s", (rental['film_id'],))
         film_key = cursor_dw.fetchone()
         cursor_dw.fetchall()  # Asegurarse de leer todos los resultados
 
         if customer_key and film_key:
-            cursor_dw.execute("""
+            cursor_dw.execute(
+                """
                 INSERT INTO fact_rentals (rental_date, customer_key, return_date, film_key, date_key)
                 VALUES (%s, %s, %s, %s, %s)
-            """, (
-                rental['rental_date'].strftime('%Y-%m-%d') if rental['rental_date'] else None,
-                customer_key[0],
-                rental['return_date'].strftime('%Y-%m-%d') if rental['return_date'] else None,
-                film_key[0],
-                rental['rental_date'].strftime('%Y-%m-%d') if rental['rental_date'] else None
-            ))
+            """,
+                (rental['rental_date'].strftime('%Y-%m-%d') if rental['rental_date'] else None,
+                 customer_key[0],
+                 rental['return_date'].strftime('%Y-%m-%d') if rental['return_date'] else None,
+                    film_key[0],
+                    rental['rental_date'].strftime('%Y-%m-%d') if rental['rental_date'] else None))
     conn_dw.commit()
 
     cursor_sakila.close()
     conn_sakila.close()
     cursor_dw.close()
     conn_dw.close()
+
 
 if __name__ == "__main__":
     populate_datawarehouse()
