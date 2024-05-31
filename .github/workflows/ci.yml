@@ -69,6 +69,8 @@ jobs:
           pip install urllib3==1.26.7
           pip install zappa
           pip install mysql-connector-python
+          pip install pandas
+          pip install holidays
           pip freeze > requirements.txt
 
           pwd
