@@ -67,12 +67,11 @@ jobs:
           pip install urllib3==1.26.7
           pip install zappa
           pip freeze > requirements.txt
-          
-      - name: to simulate rents in sakila
-        run: |
+
           pwd
           zappa update dev
           zappa invoke dev lambda.lambda_handler
+          
 
       - name: To upload s3 with sakila data
         run: python run_jobSakila.py
